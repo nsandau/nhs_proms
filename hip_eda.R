@@ -4,6 +4,7 @@ library(janitor)
 library(tidyverse)
 library(naniar)
 library(skimr)
+library(DataExplorer)
 set.seed(111)
 
 # load csvs
@@ -125,11 +126,9 @@ df_qscore <- df_prep %>%
 df_qscore %>%
   mutate(across(where(is_double) &
     !c(pre_op_q_eq5d_index, pre_op_q_eq_vas, hip_replacement_pre_op_q_score), as.factor),
-  year = as.factor(year)
-  ) %>%
-  plot_bar(by = "year")
-
-
+  year = as.factor(year),
+  hip_replacement_post_op_q_score_bin = as_factor(hip_replacement_post_op_q_score_bin)
+  ) %>% create_report(y = "hip_replacement_post_op_q_score_bin")
 
 
 ##### eq5d ######
@@ -137,10 +136,6 @@ df_eq5d <- df_prep %>%
   select(-hip_replacement_post_op_q_score, -post_op_q_eq_vas) %>%
   drop_na(post_op_q_eq5d_index)
 
-
-df_eq5d %>% mutate(across(where(is_double) & !c(post_op_q_eq5d_index, pre_op_q_eq5d_index, pre_op_q_eq_vas, hip_replacement_pre_op_q_score), as.factor),
-                   year = as.factor(year)
-) %>% create_report(by = year)
 
 
 # kan prøve at transforme numeriske?

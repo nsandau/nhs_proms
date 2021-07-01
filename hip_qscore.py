@@ -12,6 +12,7 @@
 
 
 # %%
+from numpy.testing._private.nosetester import NoseTester
 from sklearn.model_selection import StratifiedKFold, RepeatedStratifiedKFold, cross_val_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, f1_score
@@ -20,19 +21,14 @@ from lightgbm import LGBMClassifier
 import pandas as pd
 import numpy as np
 import optuna
-from utils import run_study
+from utils import run_study, split_train_test
 
 
 # %%
 # CONFIG
-
 kfolds = RepeatedStratifiedKFold(n_splits=5, n_repeats=3)
-
-
 # %%
-
 df = pd.read_csv('data/data_preprocessed/qscore.csv')
-
 
 # %%
 
@@ -62,24 +58,21 @@ y_test_nm = test_nm["hip_replacement_post_op_q_score_bin"]
 # den smider nogle fejl
 # har ikke weightet, one_hottet eller noget andet ...
 
-# jeg kan lave split ds funktion så jeg splitter inde i objektive .. kan teste om missing med impute eller ej virker
-
 
 def obj_logr(trial):
+    df = train.dropna()
+    X, y = split_train_test(df, y_var="hip_replacement_post_op_q_score_bin")
     logreg = LogisticRegression(
         solver="saga",
         l1_ratio=trial.suggest_float("l1_ratio", 0, 1),
         C=trial.suggest_loguniform("C", 1e-6, 1))
-
-    cv_score = cross_val_score(logreg, X_train_nm, y_train_nm,
+    cv_score = cross_val_score(logreg, X, y,
                                scoring="roc_auc", cv=kfolds, n_jobs=-1)
     return np.mean(cv_score)
 
+
 # %%
-
-
 study_logr = run_study(obj_logr, n_trials=10, study_name="logr")
-
 
 # %%
 
@@ -119,11 +112,6 @@ def obj_lgbm(trial):
 
 
 # %%
-
-
-# %%
-best_lgbm = study.best_params
-# %%
 lgbm = LGBMClassifier(
     learning_rate=0.1,
     max_depth=14,
@@ -149,5 +137,6 @@ roc_auc_score(y_test, probas[:, 1]),
 # %%
 preds = lgbm.predict(X_test)
 f1_score(y_test, preds)
+
 
 # %%

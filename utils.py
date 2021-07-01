@@ -2,7 +2,7 @@
 import optuna
 
 
-def run_study(obj, n_trials, study_name):
+def run_study(obj, n_trials, study_name, run=True):
 
     pruner = optuna.pruners.NopPruner()
     sampler = optuna.samplers.TPESampler(multivariate=True)
@@ -14,6 +14,24 @@ def run_study(obj, n_trials, study_name):
                                 sampler=sampler,
                                 pruner=pruner,
                                 direction="maximize")
-
-    study.optimize(obj, n_trials=n_trials)
+    if run:
+        study.optimize(obj, n_trials=n_trials)
     return study
+
+
+def plot_study(study):
+
+    plots = [
+        optuna.visualization.plot_contour(study),
+        optuna.visualization.plot_param_importances(study),
+        optuna.visualization.plot_slice(study),
+        optuna.visualization.plot_edf(study),
+        optuna.visualization.plot_parallel_coordinate(study), ]
+    for plt in plots:
+        plt.show()
+
+
+def split_train_test(df, y_var):
+    X = df.drop([y_var], axis=1)
+    y = df[y_var]
+    return X, y
